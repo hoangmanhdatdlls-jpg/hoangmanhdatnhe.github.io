@@ -1,0 +1,762 @@
+import { useState, useEffect, useCallback } from "react";
+
+// ── DATA FROM BOOKS ─────────────────────────────────────────────────────────
+
+const VOCAB_DATA = [
+  // Collins Vocabulary for IELTS – Unit 1: People & Relationships
+  { id: 1, word: "autonomous", ipa: "/ɔːˈtɒnəməs/", meaning: "tự chủ, độc lập", example: "They proudly declared themselves part of a new autonomous province.", topic: "People & Relationships", type: "adjective" },
+  { id: 2, word: "consistent", ipa: "/kənˈsɪstənt/", meaning: "nhất quán, kiên định", example: "His consistent support of free trade impressed many colleagues.", topic: "People & Relationships", type: "adjective" },
+  { id: 3, word: "conventional", ipa: "/kənˈvenʃənl/", meaning: "thông thường, truyền thống", example: "She had conventional opinions about family roles.", topic: "People & Relationships", type: "adjective" },
+  { id: 4, word: "flexible", ipa: "/ˈfleksɪbl/", meaning: "linh hoạt, dễ thích nghi", example: "We encourage flexible working arrangements.", topic: "People & Relationships", type: "adjective" },
+  { id: 5, word: "idealistic", ipa: "/aɪˌdɪəˈlɪstɪk/", meaning: "lý tưởng hóa", example: "Idealistic young people died for the cause.", topic: "People & Relationships", type: "adjective" },
+  { id: 6, word: "tolerant", ipa: "/ˈtɒlərənt/", meaning: "khoan dung, chấp nhận sự khác biệt", example: "They need to be tolerant of different points of view.", topic: "People & Relationships", type: "adjective" },
+  { id: 7, word: "vulnerable", ipa: "/ˈvʌlnərəbl/", meaning: "dễ bị tổn thương", example: "Old people are particularly vulnerable members of our society.", topic: "People & Relationships", type: "adjective" },
+  { id: 8, word: "colleague", ipa: "/ˈkɒliːɡ/", meaning: "đồng nghiệp", example: "Female academics are still paid less than their male colleagues.", topic: "People & Relationships", type: "noun" },
+  { id: 9, word: "sibling", ipa: "/ˈsɪblɪŋ/", meaning: "anh chị em ruột", example: "Sibling rivalry often causes parents anxieties.", topic: "People & Relationships", type: "noun" },
+  { id: 10, word: "spouse", ipa: "/spaʊs/", meaning: "vợ hoặc chồng", example: "Husbands and wives do not have to pay inheritance tax when their spouse dies.", topic: "People & Relationships", type: "noun" },
+  // Essential Words – Unit 1: Natural World
+  { id: 11, word: "deforestation", ipa: "/dɪˌfɒrɪˈsteɪʃn/", meaning: "nạn phá rừng", example: "Deforestation is responsible for about one-fifth of carbon dioxide emissions worldwide.", topic: "Natural World", type: "noun" },
+  { id: 12, word: "erosion", ipa: "/ɪˈrəʊʒn/", meaning: "xói mòn", example: "Soil erosion leads to the pollution of streams and rivers.", topic: "Natural World", type: "noun" },
+  { id: 13, word: "extensive", ipa: "/ɪkˈstensɪv/", meaning: "rộng lớn, mở rộng", example: "The Amazon rain forest is the most extensive rain forest in the world.", topic: "Natural World", type: "adjective" },
+  { id: 14, word: "evaporation", ipa: "/ɪˌvæpəˈreɪʃn/", meaning: "sự bốc hơi", example: "Trees provide shade to lessen evaporation from the soil.", topic: "Natural World", type: "noun" },
+  { id: 15, word: "biodiversity", ipa: "/ˌbaɪəʊdaɪˈvɜːsɪti/", meaning: "đa dạng sinh học", example: "Tropical rain forests are a vital natural resource with extensive biodiversity.", topic: "Natural World", type: "noun" },
+  { id: 16, word: "accumulate", ipa: "/əˈkjuːmjʊleɪt/", meaning: "tích lũy, tích tụ dần dần", example: "Carbon dioxide continues to accumulate in the atmosphere.", topic: "Natural World", type: "verb" },
+  { id: 17, word: "resilient", ipa: "/rɪˈzɪliənt/", meaning: "bền bỉ, có sức chịu đựng", example: "Desert plants are resilient and able to endure difficult conditions.", topic: "Natural World", type: "adjective" },
+  { id: 18, word: "moisture", ipa: "/ˈmɔɪstʃə/", meaning: "độ ẩm, hơi nước", example: "In a healthy forest, trees draw moisture from the soil.", topic: "Natural World", type: "noun" },
+  { id: 19, word: "sparse", ipa: "/spɑːs/", meaning: "thưa thớt, ít ỏi", example: "Vegetation is sparse in the driest parts of the desert.", topic: "Natural World", type: "adjective" },
+  { id: 20, word: "prolific", ipa: "/prəˈlɪfɪk/", meaning: "sản xuất nhiều, phong phú", example: "This species is prolific and produces large amounts of seeds.", topic: "Natural World", type: "adjective" },
+  // Education
+  { id: 21, word: "curriculum", ipa: "/kəˈrɪkjʊləm/", meaning: "chương trình học", example: "The school revised its curriculum to include more science subjects.", topic: "Education", type: "noun" },
+  { id: 22, word: "pedagogy", ipa: "/ˈpedəɡɒdʒi/", meaning: "phương pháp sư phạm", example: "Modern pedagogy emphasizes student-centred learning.", topic: "Education", type: "noun" },
+  { id: 23, word: "tuition", ipa: "/tjuːˈɪʃn/", meaning: "học phí; việc dạy học", example: "University tuition fees have risen sharply in recent years.", topic: "Education", type: "noun" },
+  { id: 24, word: "literacy", ipa: "/ˈlɪtərəsi/", meaning: "khả năng đọc viết", example: "Improving literacy rates is a key government priority.", topic: "Education", type: "noun" },
+  { id: 25, word: "compulsory", ipa: "/kəmˈpʌlsəri/", meaning: "bắt buộc", example: "Education is compulsory for children between 5 and 16.", topic: "Education", type: "adjective" },
+  // Technology
+  { id: 26, word: "innovation", ipa: "/ˌɪnəˈveɪʃn/", meaning: "sự đổi mới, cách tân", example: "Technological innovation has transformed the way we communicate.", topic: "Technology", type: "noun" },
+  { id: 27, word: "automation", ipa: "/ˌɔːtəˈmeɪʃn/", meaning: "tự động hóa", example: "Automation has replaced many manual jobs in factories.", topic: "Technology", type: "noun" },
+  { id: 28, word: "infrastructure", ipa: "/ˈɪnfrəstrʌktʃə/", meaning: "cơ sở hạ tầng", example: "Poor infrastructure hinders economic development.", topic: "Technology", type: "noun" },
+  { id: 29, word: "proliferation", ipa: "/prəˌlɪfəˈreɪʃn/", meaning: "sự phát triển mạnh mẽ, lan rộng", example: "The proliferation of smartphones has changed social interaction.", topic: "Technology", type: "noun" },
+  { id: 30, word: "algorithm", ipa: "/ˈælɡərɪðm/", meaning: "thuật toán", example: "Social media algorithms determine what content you see.", topic: "Technology", type: "noun" },
+  // Health
+  { id: 31, word: "sedentary", ipa: "/ˈsedntri/", meaning: "ít vận động, ngồi nhiều", example: "A sedentary lifestyle increases the risk of heart disease.", topic: "Health", type: "adjective" },
+  { id: 32, word: "epidemic", ipa: "/ˌepɪˈdemɪk/", meaning: "dịch bệnh", example: "The obesity epidemic is a major public health challenge.", topic: "Health", type: "noun" },
+  { id: 33, word: "prognosis", ipa: "/prɒɡˈnəʊsɪs/", meaning: "tiên lượng bệnh", example: "The doctor gave a positive prognosis for the patient's recovery.", topic: "Health", type: "noun" },
+  { id: 34, word: "chronic", ipa: "/ˈkrɒnɪk/", meaning: "mãn tính, kéo dài", example: "Millions of people suffer from chronic back pain.", topic: "Health", type: "adjective" },
+  { id: 35, word: "rehabilitation", ipa: "/ˌriːəˌbɪlɪˈteɪʃn/", meaning: "phục hồi chức năng", example: "Physical rehabilitation helped him recover from the injury.", topic: "Health", type: "noun" },
+  // Society
+  { id: 36, word: "inequality", ipa: "/ˌɪnɪˈkwɒlɪti/", meaning: "sự bất bình đẳng", example: "Income inequality continues to grow in many countries.", topic: "Society", type: "noun" },
+  { id: 37, word: "demographic", ipa: "/ˌdeməˈɡræfɪk/", meaning: "nhân khẩu học", example: "Demographic changes have altered the workforce significantly.", topic: "Society", type: "noun/adjective" },
+  { id: 38, word: "urbanization", ipa: "/ˌɜːbənaɪˈzeɪʃn/", meaning: "đô thị hóa", example: "Rapid urbanization has led to housing shortages in many cities.", topic: "Society", type: "noun" },
+  { id: 39, word: "marginalized", ipa: "/ˈmɑːdʒɪnəlaɪzd/", meaning: "bị gạt ra ngoài lề xã hội", example: "Marginalized communities often lack access to quality education.", topic: "Society", type: "adjective" },
+  { id: 40, word: "sustainable", ipa: "/səˈsteɪnəbl/", meaning: "bền vững", example: "We need sustainable solutions to environmental problems.", topic: "Society", type: "adjective" },
+];
+
+const TOPICS = ["All", "People & Relationships", "Natural World", "Education", "Technology", "Health", "Society"];
+
+const QUIZ_QUESTIONS = [
+  { id: 1, question: "The Amazon rain forest is the most ________ rain forest in the world.", answer: "extensive", options: ["sparse", "extensive", "prolific", "resilient"], explanation: "'Extensive' means covering a large area. The Amazon is the world's largest tropical rainforest." },
+  { id: 2, question: "Old people are particularly ________ members of society who need special care.", answer: "vulnerable", options: ["tolerant", "flexible", "vulnerable", "consistent"], explanation: "'Vulnerable' means weak and without protection, easily hurt physically or emotionally." },
+  { id: 3, question: "Soil ________ leads to the pollution of streams and rivers.", answer: "erosion", options: ["evaporation", "erosion", "accumulation", "deforestation"], explanation: "'Erosion' is the process by which soil is worn away by water or wind." },
+  { id: 4, question: "They need to be ________ of different points of view in a diverse society.", answer: "tolerant", options: ["idealistic", "autonomous", "tolerant", "compulsory"], explanation: "'Tolerant' means allowing others to have different opinions without criticism." },
+  { id: 5, question: "A ________ lifestyle that involves little exercise increases the risk of heart disease.", answer: "sedentary", options: ["chronic", "sedentary", "compulsory", "prolific"], explanation: "'Sedentary' describes a way of life with little physical activity." },
+  { id: 6, question: "Rapid ________ has led to housing shortages in many developing cities.", answer: "urbanization", options: ["urbanization", "rehabilitation", "proliferation", "automation"], explanation: "'Urbanization' is the process by which more people move from rural to urban areas." },
+  { id: 7, question: "The proliferation of smartphones has changed social ________ dramatically.", answer: "interaction", options: ["erosion", "interaction", "moisture", "literacy"], explanation: "Social 'interaction' means the way people communicate and relate to each other." },
+  { id: 8, question: "Carbon dioxide continues to ________ in the atmosphere, causing climate change.", answer: "accumulate", options: ["dilute", "accumulate", "erode", "minimize"], explanation: "'Accumulate' means to gradually increase or collect over time." },
+];
+
+const GRAMMAR_LESSONS = [
+  {
+    id: 1,
+    title: "IELTS Task 2: Argument Essay Structure",
+    icon: "✍️",
+    content: `An IELTS Task 2 argument essay should have a clear 4-paragraph structure.`,
+    sections: [
+      { heading: "Introduction", body: "Paraphrase the question statement, then state your position clearly. Never copy the question word for word.", formula: "Paraphrase + Thesis Statement" },
+      { heading: "Body Paragraph 1 (Main Argument)", body: "State your main point, explain it, give an example or evidence, and link back to the question.", formula: "Topic Sentence → Explanation → Example → Concluding Link" },
+      { heading: "Body Paragraph 2 (Counter-Argument or Second Point)", body: "Acknowledge the opposing view or add a second supporting argument with evidence.", formula: "Concession / Point → Evidence → Rebuttal / Link" },
+      { heading: "Conclusion", body: "Restate your position and summarize key points. Never introduce new ideas.", formula: "Restate opinion + Summary (no new ideas)" },
+    ],
+    tips: ["Use linking words: Furthermore, However, Therefore, In conclusion", "Aim for 250–280 words", "Spend 2 minutes planning before writing"],
+    quiz: [{ q: "Which paragraph should you NOT introduce new ideas?", a: "Conclusion", opts: ["Introduction", "Body 1", "Body 2", "Conclusion"] }]
+  },
+  {
+    id: 2,
+    title: "IELTS Task 1: Describing Graphs & Charts",
+    icon: "📊",
+    content: `Task 1 requires you to describe visual data (bar chart, line graph, pie chart, table, map, or diagram) in at least 150 words.`,
+    sections: [
+      { heading: "Introduction", body: "Paraphrase what the graph shows — the type of graph, what it measures, and the time period.", formula: "The [graph/chart/table] illustrates/shows [topic] [time period]." },
+      { heading: "Overview", body: "Describe the most significant trends or features. This is the most important paragraph — don't skip it!", formula: "Overall, it is clear that... / The most notable feature is..." },
+      { heading: "Detail Paragraphs", body: "Group similar data together and describe specific figures with accurate numbers and comparisons.", formula: "In [year], [subject] + verb + figure, compared to..." },
+    ],
+    tips: ["Always include an Overview paragraph", "Use past tense for past data, present for current", "Never give your own opinion in Task 1"],
+    quiz: [{ q: "Which paragraph is MOST important and must not be skipped in Task 1?", a: "Overview", opts: ["Introduction", "Overview", "Detail", "Conclusion"] }]
+  },
+  {
+    id: 3,
+    title: "Expressing Trends (Task 1 Language)",
+    icon: "📈",
+    content: `Use varied vocabulary to describe movements in data.`,
+    sections: [
+      { heading: "Upward Trends", body: "rose, increased, grew, climbed, surged, soared, jumped", formula: "Subject + verb + (adverb) + to/by + figure" },
+      { heading: "Downward Trends", body: "fell, decreased, dropped, declined, plummeted, slumped", formula: "There was a (adjective) + noun + in [subject]" },
+      { heading: "Stable Trends", body: "remained stable, stayed constant, levelled off, plateaued", formula: "Subject + remained + adjective / levelled off at + figure" },
+      { heading: "Adjectives for Degree", body: "dramatic, significant, sharp, slight, gradual, steady, marginal", formula: "a + adjective + noun: 'a dramatic increase'" },
+    ],
+    tips: ["Vary between verb form and noun form", "Always mention specific figures", "Use 'by' for change amount, 'to' for final value"],
+    quiz: [{ q: "Which word means a very sudden, large increase?", a: "surged", opts: ["levelled off", "surged", "declined", "remained stable"] }]
+  },
+  {
+    id: 4,
+    title: "Linking Words & Cohesion",
+    icon: "🔗",
+    content: `Coherence and cohesion account for 25% of your IELTS Writing score. Use a variety of linking devices.`,
+    sections: [
+      { heading: "Addition", body: "Furthermore, In addition, Moreover, Also, Besides, What is more", formula: "Use to add supporting information" },
+      { heading: "Contrast", body: "However, Nevertheless, On the other hand, Despite, Although, Whereas, In contrast", formula: "Use to introduce opposing ideas" },
+      { heading: "Cause & Effect", body: "Therefore, As a result, Consequently, Due to, Because of, This leads to, Hence", formula: "Use to show logical connections" },
+      { heading: "Examples", body: "For example, For instance, Such as, To illustrate, In particular", formula: "Use before giving evidence or examples" },
+    ],
+    tips: ["Don't start every sentence with a linking word", "Use pronouns (this, these, it) to refer back", "Vary your cohesive devices throughout the essay"],
+    quiz: [{ q: "Which linking word best introduces a contrasting idea?", a: "However", opts: ["Furthermore", "However", "Therefore", "For example"] }]
+  },
+];
+
+const READING_PASSAGE = {
+  title: "Environmental Impacts of Logging",
+  source: "Essential Words for the IELTS – Unit 1",
+  text: `Logging, the practice of felling trees for commercial timber, has had significant environmental consequences across the globe. In a healthy forest ecosystem, trees draw moisture from the soil and release it into the atmosphere while they provide shade to lessen evaporation. When this balance is disrupted by large-scale deforestation, the results can be catastrophic.\n\nForests, especially the tropical rain forests, are a vital natural resource with extensive biodiversity and irreplaceable wildlife habitats. The stability of the natural environment depends on the interaction of many complex factors. Trees act as an effective defense against both air pollution and soil erosion. When soil erodes, there are no nutrients left to help plants grow, and pollutants enter nearby water systems.\n\nDeforestation impacts rainfall patterns, leading to flooding as well as drought and forest fires. It is responsible for about one-fifth of carbon dioxide emissions worldwide, making it a major contributor to climate change — in particular, global warming. In the Amazon basin alone, deforestation is responsible for millions of tons of carbon dioxide being released into the atmosphere annually.\n\nMore responsible logging practices and international cooperation would help ensure that these irreplaceable ecosystems are protected for future generations.`,
+  questions: [
+    { id: 1, q: "Trees provide shade to lessen ________ from the soil.", a: "evaporation", opts: ["erosion", "evaporation", "pollution", "moisture"] },
+    { id: 2, q: "Deforestation is responsible for about ________ of global CO₂ emissions.", a: "one-fifth", opts: ["one-tenth", "one-third", "one-fifth", "one-half"] },
+    { id: 3, q: "What do forests provide that is described as 'irreplaceable'?", a: "wildlife habitats", opts: ["timber resources", "wildlife habitats", "carbon sinks", "rainfall patterns"] },
+  ]
+};
+
+// ── ICONS ────────────────────────────────────────────────────────────────────
+const Icon = ({ name }) => {
+  const icons = {
+    home: "⊞", vocab: "📖", grammar: "✏️", quiz: "🎯", reading: "📰",
+    star: "★", starEmpty: "☆", sound: "🔊", check: "✓", x: "✗",
+    sun: "☀", moon: "🌙", flame: "🔥", trophy: "🏆", book: "📚",
+    chart: "📊", brain: "🧠", arrow: "→", back: "←", flip: "↺",
+    lock: "🔒", unlock: "🔓"
+  };
+  return <span style={{ fontSize: "inherit" }}>{icons[name] || "•"}</span>;
+};
+
+// ── SPEECH SYNTHESIS ─────────────────────────────────────────────────────────
+function speak(text) {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US"; u.rate = 0.85;
+    window.speechSynthesis.speak(u);
+  }
+}
+
+// ── LOCAL STORAGE HELPERS ────────────────────────────────────────────────────
+function loadLS(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function saveLS(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MAIN APP
+// ════════════════════════════════════════════════════════════════════════════
+export default function App() {
+  const [page, setPage] = useState("dashboard");
+  const [dark, setDark] = useState(() => loadLS("dark", false));
+  const [favorites, setFavorites] = useState(() => loadLS("favorites", []));
+  const [learned, setLearned] = useState(() => loadLS("learned", []));
+  const [quizScores, setQuizScores] = useState(() => loadLS("quizScores", []));
+  const [streak] = useState(loadLS("streak", 3));
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => { saveLS("dark", dark); }, [dark]);
+  useEffect(() => { saveLS("favorites", favorites); }, [favorites]);
+  useEffect(() => { saveLS("learned", learned); }, [learned]);
+  useEffect(() => { saveLS("quizScores", quizScores); }, [quizScores]);
+
+  const showToast = useCallback((msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 2200);
+  }, []);
+
+  const toggleFav = (id) => {
+    setFavorites(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
+  };
+  const markLearned = (id) => {
+    if (!learned.includes(id)) { setLearned(l => [...l, id]); showToast("Marked as learned! 🎉"); }
+  };
+
+  // ── THEME ──
+  const bg = dark ? "#0f1117" : "#f5f7f5";
+  const card = dark ? "#1a1f2e" : "#ffffff";
+  const cardBorder = dark ? "#2a3045" : "#e8ede8";
+  const text = dark ? "#e8edf0" : "#1a2520";
+  const textMuted = dark ? "#8899a6" : "#607060";
+  const accent = "#2d7a45";
+  const accentLight = dark ? "#1a3d27" : "#e8f5ed";
+  const accentBright = "#3dba5f";
+
+  const styles = {
+    app: { minHeight: "100vh", background: bg, color: text, fontFamily: "'Lora', 'Georgia', serif", transition: "background 0.3s, color 0.3s" },
+    sidebar: { position: "fixed", left: 0, top: 0, bottom: 0, width: 220, background: dark ? "#141820" : "#1e3328", zIndex: 100, display: "flex", flexDirection: "column", padding: "24px 0" },
+    sidebarLogo: { padding: "0 20px 24px", borderBottom: `1px solid rgba(255,255,255,0.08)`, marginBottom: 8 },
+    logoText: { fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: -0.5 },
+    logoSub: { fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2, fontFamily: "monospace" },
+    navItem: (active) => ({ display: "flex", alignItems: "center", gap: 10, padding: "11px 20px", cursor: "pointer", borderRadius: "0 24px 24px 0", marginRight: 16, fontSize: 14, fontWeight: active ? 600 : 400, color: active ? "#fff" : "rgba(255,255,255,0.5)", background: active ? accent : "transparent", transition: "all 0.2s" }),
+    main: { marginLeft: 220, padding: "28px 32px", minHeight: "100vh" },
+    header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 },
+    pageTitle: { fontSize: 26, fontWeight: 700, letterSpacing: -0.5 },
+    toggleBtn: { background: dark ? "#2a3045" : "#e8ede8", border: "none", borderRadius: 20, padding: "8px 14px", cursor: "pointer", color: text, fontSize: 18, transition: "all 0.2s" },
+    card: { background: card, border: `1px solid ${cardBorder}`, borderRadius: 16, padding: 24, marginBottom: 20 },
+    statCard: { background: card, border: `1px solid ${cardBorder}`, borderRadius: 16, padding: "20px 24px", flex: 1, minWidth: 130 },
+    statNum: { fontSize: 32, fontWeight: 800, color: accent },
+    statLabel: { fontSize: 12, color: textMuted, marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 },
+    progressBar: (pct, color = accent) => ({ height: 8, borderRadius: 4, background: dark ? "#2a3045" : "#e2e8e2", position: "relative", overflow: "hidden", after: {} }),
+    progressFill: (pct, color = accent) => ({ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${color}, ${accentBright})`, borderRadius: 4, transition: "width 0.8s ease" }),
+    btn: (variant = "primary") => ({ padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "all 0.18s", background: variant === "primary" ? accent : variant === "ghost" ? "transparent" : accentLight, color: variant === "primary" ? "#fff" : variant === "ghost" ? textMuted : accent, border: variant === "ghost" ? `1px solid ${cardBorder}` : "none" }),
+    pill: (active) => ({ padding: "6px 14px", borderRadius: 20, border: `1px solid ${active ? accent : cardBorder}`, background: active ? accentLight : "transparent", color: active ? accent : textMuted, cursor: "pointer", fontSize: 13, fontWeight: active ? 600 : 400, transition: "all 0.15s" }),
+    toast: (type) => ({ position: "fixed", bottom: 24, right: 24, background: type === "success" ? accent : "#c0392b", color: "#fff", padding: "12px 20px", borderRadius: 12, fontSize: 14, fontWeight: 600, zIndex: 999, boxShadow: "0 8px 24px rgba(0,0,0,0.25)", animation: "slideUp 0.3s ease" }),
+  };
+
+  const navItems = [
+    { id: "dashboard", label: "Dashboard", icon: "home" },
+    { id: "vocab", label: "Vocabulary", icon: "vocab" },
+    { id: "grammar", label: "Grammar", icon: "grammar" },
+    { id: "quiz", label: "Quiz", icon: "quiz" },
+    { id: "reading", label: "Reading", icon: "reading" },
+  ];
+
+  const progress = Math.round((learned.length / VOCAB_DATA.length) * 100);
+
+  return (
+    <div style={styles.app}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes flipCard { 0%{transform:rotateY(0)} 50%{transform:rotateY(90deg)} 100%{transform:rotateY(0)} }
+        ::-webkit-scrollbar { width: 6px } ::-webkit-scrollbar-track { background: transparent }
+        ::-webkit-scrollbar-thumb { background: ${dark ? "#3a4055" : "#c8d8c8"}; border-radius: 3px }
+        @media (max-width: 768px) { .sidebar { display: none } .main { margin-left: 0 !important } }
+      `}</style>
+
+      {/* SIDEBAR */}
+      <nav style={styles.sidebar}>
+        <div style={styles.sidebarLogo}>
+          <div style={styles.logoText}>📚 IELTS Hub</div>
+          <div style={styles.logoSub}>Essential · Collins · Hackers</div>
+        </div>
+        {navItems.map(n => (
+          <div key={n.id} style={styles.navItem(page === n.id)} onClick={() => setPage(n.id)}>
+            <Icon name={n.icon} />{n.label}
+          </div>
+        ))}
+        <div style={{ marginTop: "auto", padding: "0 20px" }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>Progress</div>
+          <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 4, height: 6, overflow: "hidden" }}>
+            <div style={{ width: `${progress}%`, height: "100%", background: accentBright, borderRadius: 4 }} />
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>{learned.length}/{VOCAB_DATA.length} words</div>
+        </div>
+      </nav>
+
+      {/* MAIN */}
+      <main style={styles.main} className="main">
+        <div style={styles.header}>
+          <div style={styles.pageTitle}>
+            {navItems.find(n => n.id === page)?.label || "Dashboard"}
+          </div>
+          <button style={styles.toggleBtn} onClick={() => setDark(d => !d)}>{dark ? "☀" : "🌙"}</button>
+        </div>
+
+        {page === "dashboard" && <Dashboard styles={styles} accent={accent} accentLight={accentLight} textMuted={textMuted} dark={dark} learned={learned} favorites={favorites} quizScores={quizScores} streak={streak} progress={progress} setPage={setPage} card={card} cardBorder={cardBorder} accentBright={accentBright} />}
+        {page === "vocab" && <VocabPage styles={styles} accent={accent} accentLight={accentLight} textMuted={textMuted} dark={dark} favorites={favorites} toggleFav={toggleFav} learned={learned} markLearned={markLearned} showToast={showToast} card={card} cardBorder={cardBorder} text={text} />}
+        {page === "grammar" && <GrammarPage styles={styles} accent={accent} accentLight={accentLight} textMuted={textMuted} dark={dark} card={card} cardBorder={cardBorder} showToast={showToast} text={text} />}
+        {page === "quiz" && <QuizPage styles={styles} accent={accent} accentLight={accentLight} textMuted={textMuted} dark={dark} card={card} cardBorder={cardBorder} setQuizScores={setQuizScores} showToast={showToast} text={text} accentBright={accentBright} />}
+        {page === "reading" && <ReadingPage styles={styles} accent={accent} accentLight={accentLight} textMuted={textMuted} dark={dark} card={card} cardBorder={cardBorder} text={text} showToast={showToast} />}
+      </main>
+
+      {toast && <div style={styles.toast(toast.type)}>{toast.msg}</div>}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════════════════════════════
+function Dashboard({ styles, accent, accentLight, textMuted, dark, learned, favorites, quizScores, streak, progress, setPage, card, cardBorder, accentBright }) {
+  const bestScore = quizScores.length ? Math.max(...quizScores) : 0;
+  const stats = [
+    { num: VOCAB_DATA.length, label: "Total Words" },
+    { num: learned.length, label: "Words Learned" },
+    { num: favorites.length, label: "Favourites" },
+    { num: `${streak}🔥`, label: "Day Streak" },
+  ];
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease" }}>
+      {/* Welcome banner */}
+      <div style={{ background: `linear-gradient(135deg, ${accent} 0%, #1a5c30 100%)`, borderRadius: 20, padding: "28px 32px", marginBottom: 24, color: "#fff", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: -20, top: -20, fontSize: 120, opacity: 0.08 }}>📚</div>
+        <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Welcome back, IELTS Scholar! 👋</div>
+        <div style={{ fontSize: 14, opacity: 0.8, marginBottom: 18 }}>Keep going — consistency is the key to a Band 7+ score.</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setPage("vocab")} style={{ background: "#fff", color: accent, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Study Words</button>
+          <button onClick={() => setPage("quiz")} style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 8, padding: "8px 18px", cursor: "pointer", fontSize: 13 }}>Take Quiz</button>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+        {stats.map(s => (
+          <div key={s.label} style={styles.statCard}>
+            <div style={styles.statNum}>{s.num}</div>
+            <div style={styles.statLabel}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Progress */}
+      <div style={styles.card}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+          <span style={{ fontWeight: 600 }}>Vocabulary Progress</span>
+          <span style={{ color: accent, fontWeight: 700 }}>{progress}%</span>
+        </div>
+        <div style={styles.progressBar(progress)}>
+          <div style={styles.progressFill(progress)} />
+        </div>
+        <div style={{ fontSize: 13, color: textMuted, marginTop: 10 }}>{learned.length} of {VOCAB_DATA.length} words mastered</div>
+      </div>
+
+      {/* Quick links */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {[
+          { page: "vocab", icon: "📖", title: "Vocabulary Flashcards", desc: "40 IELTS words from Collins & Barron's" },
+          { page: "grammar", icon: "✏️", title: "Grammar & Writing", desc: "Hackers IELTS Writing strategies" },
+          { page: "quiz", icon: "🎯", title: "Practice Quiz", desc: `Best score: ${bestScore}/${QUIZ_QUESTIONS.length}` },
+          { page: "reading", icon: "📰", title: "Reading Practice", desc: "Passage + comprehension questions" },
+        ].map(item => (
+          <div key={item.page} onClick={() => setPage(item.page)} style={{ ...styles.card, cursor: "pointer", transition: "all 0.2s", marginBottom: 0 }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.borderColor = accent; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.borderColor = cardBorder; }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>{item.icon}</div>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>{item.title}</div>
+            <div style={{ fontSize: 13, color: textMuted }}>{item.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// VOCABULARY PAGE
+// ════════════════════════════════════════════════════════════════════════════
+function VocabPage({ styles, accent, accentLight, textMuted, dark, favorites, toggleFav, learned, markLearned, showToast, card, cardBorder, text }) {
+  const [topic, setTopic] = useState("All");
+  const [search, setSearch] = useState("");
+  const [mode, setMode] = useState("browse"); // browse | flashcard
+  const [cardIdx, setCardIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [showFavsOnly, setShowFavsOnly] = useState(false);
+
+  const filtered = VOCAB_DATA.filter(w =>
+    (topic === "All" || w.topic === topic) &&
+    (w.word.toLowerCase().includes(search.toLowerCase()) || w.meaning.toLowerCase().includes(search.toLowerCase())) &&
+    (!showFavsOnly || favorites.includes(w.id))
+  );
+
+  const card_ = filtered[cardIdx];
+
+  const nextCard = () => { setFlipped(false); setTimeout(() => setCardIdx(i => Math.min(i + 1, filtered.length - 1)), 100); };
+  const prevCard = () => { setFlipped(false); setTimeout(() => setCardIdx(i => Math.max(i - 1, 0)), 100); };
+
+  useEffect(() => { setCardIdx(0); setFlipped(false); }, [topic, search, showFavsOnly]);
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease" }}>
+      {/* Controls */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search words…"
+          style={{ flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 10, border: `1px solid ${cardBorder}`, background: card, color: text, fontSize: 14, outline: "none" }} />
+        <div style={{ display: "flex", gap: 6 }}>
+          {["browse", "flashcard"].map(m => (
+            <button key={m} onClick={() => setMode(m)} style={styles.pill(mode === m)}>{m === "browse" ? "📋 Browse" : "🃏 Flashcard"}</button>
+          ))}
+        </div>
+        <button onClick={() => setShowFavsOnly(f => !f)} style={styles.pill(showFavsOnly)}>★ Favourites</button>
+      </div>
+
+      {/* Topic filters */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        {TOPICS.map(t => (
+          <button key={t} onClick={() => setTopic(t)} style={styles.pill(topic === t)}>{t}</button>
+        ))}
+      </div>
+
+      {/* FLASHCARD MODE */}
+      {mode === "flashcard" && filtered.length > 0 && (
+        <div style={{ maxWidth: 520, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 16, color: textMuted, fontSize: 13 }}>
+            {cardIdx + 1} / {filtered.length}
+          </div>
+          <div onClick={() => setFlipped(f => !f)} style={{ cursor: "pointer", perspective: 1000 }}>
+            <div style={{ background: card, border: `2px solid ${flipped ? accent : cardBorder}`, borderRadius: 20, padding: "48px 32px", textAlign: "center", minHeight: 260, transition: "border-color 0.3s", position: "relative" }}>
+              {!flipped ? (
+                <>
+                  <div style={{ fontSize: 36, fontWeight: 700, color: accent, marginBottom: 10 }}>{card_.word}</div>
+                  <div style={{ fontSize: 15, color: textMuted, fontFamily: "monospace", marginBottom: 16 }}>{card_.ipa}</div>
+                  <div style={{ fontSize: 12, color: textMuted, border: `1px solid ${cardBorder}`, display: "inline-block", padding: "4px 12px", borderRadius: 20 }}>{card_.topic} · {card_.type}</div>
+                  <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, textAlign: "center", fontSize: 12, color: textMuted }}>Tap to reveal meaning</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 14, color: textMuted, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Meaning</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 16, color: text }}>{card_.meaning}</div>
+                  <div style={{ fontSize: 14, color: textMuted, fontStyle: "italic", lineHeight: 1.6 }}>"{card_.example}"</div>
+                </>
+              )}
+            </div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16, gap: 10 }}>
+            <button onClick={prevCard} style={styles.btn("ghost")} disabled={cardIdx === 0}>← Prev</button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => speak(card_.word)} style={styles.btn("ghost")}>🔊</button>
+              <button onClick={() => toggleFav(card_.id)} style={styles.btn("ghost")}>{favorites.includes(card_.id) ? "★" : "☆"}</button>
+              <button onClick={() => markLearned(card_.id)} style={styles.btn(learned.includes(card_.id) ? "ghost" : "primary")}>{learned.includes(card_.id) ? "✓ Learned" : "Mark Learned"}</button>
+            </div>
+            <button onClick={nextCard} style={styles.btn("ghost")} disabled={cardIdx === filtered.length - 1}>Next →</button>
+          </div>
+        </div>
+      )}
+
+      {/* BROWSE MODE */}
+      {mode === "browse" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
+          {filtered.map(w => (
+            <div key={w.id} style={{ ...styles.card, marginBottom: 0, position: "relative", transition: "all 0.2s" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = accent}
+              onMouseLeave={e => e.currentTarget.style.borderColor = cardBorder}>
+              {learned.includes(w.id) && <div style={{ position: "absolute", top: 12, right: 44, fontSize: 14, color: "#3dba5f" }}>✓</div>}
+              <button onClick={() => toggleFav(w.id)} style={{ position: "absolute", top: 10, right: 12, background: "none", border: "none", cursor: "pointer", fontSize: 18, color: favorites.includes(w.id) ? "#f5a623" : textMuted }}>
+                {favorites.includes(w.id) ? "★" : "☆"}
+              </button>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 700, color: accent }}>{w.word}</span>
+                <span style={{ fontSize: 12, color: textMuted, fontFamily: "monospace" }}>{w.ipa}</span>
+                <button onClick={() => speak(w.word)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: 0 }}>🔊</button>
+              </div>
+              <div style={{ fontSize: 11, color: textMuted, marginBottom: 8 }}>
+                <span style={{ background: accentLight, color: accent, padding: "2px 8px", borderRadius: 10, marginRight: 6 }}>{w.type}</span>
+                {w.topic}
+              </div>
+              <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 15 }}>{w.meaning}</div>
+              <div style={{ fontSize: 13, color: textMuted, fontStyle: "italic", lineHeight: 1.5 }}>"{w.example}"</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {filtered.length === 0 && (
+        <div style={{ textAlign: "center", padding: 48, color: textMuted }}>No words found. Try a different search.</div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// GRAMMAR PAGE
+// ════════════════════════════════════════════════════════════════════════════
+function GrammarPage({ styles, accent, accentLight, textMuted, dark, card, cardBorder, showToast, text }) {
+  const [active, setActive] = useState(null);
+  const [quizAnswers, setQuizAnswers] = useState({});
+
+  const handleQuiz = (lessonId, ans, correct) => {
+    setQuizAnswers(q => ({ ...q, [lessonId]: ans }));
+    if (ans === correct) showToast("Correct! 🎉");
+    else showToast(`Incorrect. Answer: "${correct}"`, "error");
+  };
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease" }}>
+      <div style={{ fontSize: 14, color: textMuted, marginBottom: 24 }}>
+        Based on <strong>Hackers IELTS Writing</strong> — Task 1 & Task 2 strategies
+      </div>
+      {GRAMMAR_LESSONS.map(lesson => (
+        <div key={lesson.id} style={{ ...styles.card, cursor: "pointer" }}>
+          <div onClick={() => setActive(active === lesson.id ? null : lesson.id)}
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 24 }}>{lesson.icon}</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>{lesson.title}</div>
+                <div style={{ fontSize: 13, color: textMuted, marginTop: 2 }}>{lesson.content.slice(0, 60)}…</div>
+              </div>
+            </div>
+            <span style={{ color: textMuted, fontSize: 20, transition: "transform 0.3s", transform: active === lesson.id ? "rotate(180deg)" : "" }}>▾</span>
+          </div>
+
+          {active === lesson.id && (
+            <div style={{ marginTop: 20, borderTop: `1px solid ${cardBorder}`, paddingTop: 20, animation: "fadeIn 0.3s ease" }}>
+              <p style={{ color: textMuted, marginBottom: 20, lineHeight: 1.6 }}>{lesson.content}</p>
+
+              {lesson.sections.map((sec, i) => (
+                <div key={i} style={{ marginBottom: 20 }}>
+                  <div style={{ fontWeight: 700, color: accent, marginBottom: 6, fontSize: 15 }}>{i + 1}. {sec.heading}</div>
+                  <div style={{ background: accentLight, borderRadius: 10, padding: "10px 14px", marginBottom: 8, fontFamily: "monospace", fontSize: 13, color: accent, fontWeight: 600 }}>
+                    📐 {sec.formula}
+                  </div>
+                  <p style={{ color: text, lineHeight: 1.7, fontSize: 14 }}>{sec.body}</p>
+                </div>
+              ))}
+
+              <div style={{ background: dark ? "#1e2535" : "#fafff8", borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                <div style={{ fontWeight: 700, marginBottom: 10, color: accent }}>💡 Exam Tips</div>
+                {lesson.tips.map((tip, i) => (
+                  <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 14, color: text }}>
+                    <span style={{ color: accent }}>→</span> {tip}
+                  </div>
+                ))}
+              </div>
+
+              {/* Mini Quiz */}
+              {lesson.quiz.map((q, i) => (
+                <div key={i} style={{ background: dark ? "#141820" : "#f0f7f0", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 12 }}>🎯 Quick Check: {q.q}</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {q.opts.map(opt => {
+                      const chosen = quizAnswers[lesson.id];
+                      const isCorrect = opt === q.a;
+                      const isChosen = opt === chosen;
+                      return (
+                        <button key={opt} onClick={() => !chosen && handleQuiz(lesson.id, opt, q.a)}
+                          style={{ padding: "8px 16px", borderRadius: 8, border: `2px solid ${chosen ? (isCorrect ? "#3dba5f" : isChosen ? "#e74c3c" : cardBorder) : cardBorder}`, background: chosen ? (isCorrect ? "#d4f5df" : isChosen ? "#fde8e8" : card) : card, color: text, cursor: chosen ? "default" : "pointer", fontWeight: isChosen ? 700 : 400, transition: "all 0.2s" }}>
+                          {opt} {chosen && isCorrect && "✓"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// QUIZ PAGE
+// ════════════════════════════════════════════════════════════════════════════
+function QuizPage({ styles, accent, accentLight, textMuted, dark, card, cardBorder, setQuizScores, showToast, text, accentBright }) {
+  const [qIdx, setQIdx] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [started, setStarted] = useState(false);
+
+  const q = QUIZ_QUESTIONS[qIdx];
+  const total = QUIZ_QUESTIONS.length;
+  const score = QUIZ_QUESTIONS.filter(q => answers[q.id] === q.answer).length;
+
+  const handleAnswer = (opt) => {
+    if (answers[q.id]) return;
+    setAnswers(a => ({ ...a, [q.id]: opt }));
+  };
+
+  const handleSubmit = () => {
+    setSubmitted(true);
+    setQuizScores(s => [...s, score]);
+    showToast(`Quiz done! Score: ${score}/${total} 🏆`);
+  };
+
+  const restart = () => { setAnswers({}); setSubmitted(false); setQIdx(0); setStarted(false); };
+
+  if (!started) return (
+    <div style={{ maxWidth: 480, margin: "40px auto", animation: "fadeIn 0.4s ease" }}>
+      <div style={{ ...styles.card, textAlign: "center", padding: 40 }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🎯</div>
+        <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>IELTS Vocabulary Quiz</div>
+        <div style={{ color: textMuted, marginBottom: 24, lineHeight: 1.6 }}>
+          {total} questions from the vocabulary in your books.<br />Test your knowledge of essential IELTS words.
+        </div>
+        <button onClick={() => setStarted(true)} style={{ ...styles.btn("primary"), padding: "12px 32px", fontSize: 16 }}>Start Quiz →</button>
+      </div>
+    </div>
+  );
+
+  if (submitted) return (
+    <div style={{ maxWidth: 560, margin: "40px auto", animation: "fadeIn 0.4s ease" }}>
+      <div style={{ ...styles.card, textAlign: "center", padding: 40 }}>
+        <div style={{ fontSize: 56, marginBottom: 12 }}>{score >= total * 0.8 ? "🏆" : score >= total * 0.5 ? "👏" : "📚"}</div>
+        <div style={{ fontSize: 42, fontWeight: 800, color: accent }}>{score}/{total}</div>
+        <div style={{ fontSize: 16, color: textMuted, marginBottom: 24 }}>
+          {score >= total * 0.8 ? "Excellent! IELTS ready! 🌟" : score >= total * 0.5 ? "Good work! Keep studying!" : "Keep practising — you've got this!"}
+        </div>
+        <div style={{ background: dark ? "#141820" : "#f5faf5", borderRadius: 12, padding: 16, marginBottom: 24, textAlign: "left" }}>
+          {QUIZ_QUESTIONS.map(q => (
+            <div key={q.id} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 16 }}>{answers[q.id] === q.answer ? "✅" : "❌"}</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{q.question}</div>
+                {answers[q.id] !== q.answer && <div style={{ fontSize: 12, color: accent }}>Answer: {q.answer} — {q.explanation}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={restart} style={styles.btn("primary")}>Try Again</button>
+      </div>
+    </div>
+  );
+
+  const answered = answers[q.id];
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", animation: "fadeIn 0.4s ease" }}>
+      {/* Progress */}
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 13, color: textMuted }}>
+        <span>Question {qIdx + 1} of {total}</span>
+        <span>{Object.keys(answers).length} answered</span>
+      </div>
+      <div style={styles.progressBar(((qIdx) / total) * 100)}>
+        <div style={styles.progressFill(((qIdx) / total) * 100)} />
+      </div>
+
+      <div style={{ ...styles.card, marginTop: 20 }}>
+        <div style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.5, marginBottom: 24 }}>{q.question}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {q.options.map(opt => {
+            const isCorrect = opt === q.answer;
+            const isChosen = opt === answered;
+            return (
+              <button key={opt} onClick={() => handleAnswer(opt)}
+                style={{ padding: "14px 16px", borderRadius: 12, border: `2px solid ${answered ? (isCorrect ? "#3dba5f" : isChosen ? "#e74c3c" : cardBorder) : cardBorder}`, background: answered ? (isCorrect ? "#d4f5df" : isChosen ? "#fde8e8" : card) : card, color: text, cursor: answered ? "default" : "pointer", textAlign: "left", fontWeight: isChosen ? 700 : 400, transition: "all 0.2s", fontSize: 14 }}>
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+        {answered && (
+          <div style={{ marginTop: 16, padding: 14, background: accentLight, borderRadius: 10, fontSize: 13, color: accent, animation: "fadeIn 0.3s ease" }}>
+            💡 {q.explanation}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+        <button onClick={() => setQIdx(i => Math.max(0, i - 1))} style={styles.btn("ghost")} disabled={qIdx === 0}>← Back</button>
+        {qIdx < total - 1
+          ? <button onClick={() => setQIdx(i => i + 1)} style={styles.btn("primary")} disabled={!answered}>Next →</button>
+          : <button onClick={handleSubmit} style={styles.btn("primary")} disabled={Object.keys(answers).length < total}>Submit Quiz</button>
+        }
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// READING PAGE
+// ════════════════════════════════════════════════════════════════════════════
+function ReadingPage({ styles, accent, accentLight, textMuted, dark, card, cardBorder, text, showToast }) {
+  const [answers, setAnswers] = useState({});
+  const [checked, setChecked] = useState(false);
+  const [highlight, setHighlight] = useState(false);
+
+  const score = READING_PASSAGE.questions.filter(q => answers[q.id] === q.a).length;
+
+  const handleCheck = () => {
+    if (Object.keys(answers).length < READING_PASSAGE.questions.length) {
+      showToast("Answer all questions first!", "error"); return;
+    }
+    setChecked(true);
+    showToast(`Score: ${score}/${READING_PASSAGE.questions.length} 📖`);
+  };
+
+  const highlightWords = ["erosion", "deforestation", "evaporation", "biodiversity", "moisture", "pollutants"];
+
+  const renderText = (text) => {
+    if (!highlight) return text;
+    let result = text;
+    highlightWords.forEach(w => {
+      result = result.split(w).join(`<mark style="background:#c8f0d4;color:#1a5c30;padding:0 2px;border-radius:3px;font-weight:600">${w}</mark>`);
+    });
+    return result;
+  };
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 18 }}>{READING_PASSAGE.title}</div>
+          <div style={{ fontSize: 13, color: textMuted }}>Source: {READING_PASSAGE.source}</div>
+        </div>
+        <button onClick={() => setHighlight(h => !h)} style={styles.pill(highlight)}>🔆 Highlight vocab</button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 20 }}>
+        {/* Passage */}
+        <div style={styles.card}>
+          <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: textMuted, marginBottom: 14 }}>Reading Passage</div>
+          {READING_PASSAGE.text.split("\n\n").map((para, i) => (
+            <p key={i} style={{ lineHeight: 1.85, marginBottom: 14, fontSize: 15 }}
+              dangerouslySetInnerHTML={{ __html: renderText(para) }} />
+          ))}
+        </div>
+
+        {/* Questions */}
+        <div>
+          <div style={styles.card}>
+            <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: textMuted, marginBottom: 16 }}>Comprehension Questions</div>
+            {READING_PASSAGE.questions.map(q => {
+              const chosen = answers[q.id];
+              return (
+                <div key={q.id} style={{ marginBottom: 20 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 14, lineHeight: 1.4 }}>{q.id}. {q.q}</div>
+                  {q.opts.map(opt => {
+                    const isCorrect = opt === q.a;
+                    const isChosen = opt === chosen;
+                    return (
+                      <div key={opt} onClick={() => !checked && setAnswers(a => ({ ...a, [q.id]: opt }))}
+                        style={{ padding: "8px 12px", marginBottom: 6, borderRadius: 8, border: `1px solid ${checked ? (isCorrect ? "#3dba5f" : isChosen ? "#e74c3c" : cardBorder) : isChosen ? accent : cardBorder}`, background: checked ? (isCorrect ? "#d4f5df" : isChosen ? "#fde8e8" : "transparent") : isChosen ? accentLight : "transparent", cursor: checked ? "default" : "pointer", fontSize: 13, transition: "all 0.15s", fontWeight: isChosen ? 600 : 400 }}>
+                        {opt}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {!checked
+              ? <button onClick={handleCheck} style={{ ...styles.btn("primary"), width: "100%" }}>Check Answers</button>
+              : <div style={{ textAlign: "center", padding: "12px", background: accentLight, borderRadius: 10 }}>
+                  <div style={{ fontWeight: 700, color: accent, fontSize: 18 }}>{score}/{READING_PASSAGE.questions.length}</div>
+                  <div style={{ fontSize: 13, color: textMuted }}>questions correct</div>
+                  <button onClick={() => { setAnswers({}); setChecked(false); }} style={{ ...styles.btn("ghost"), marginTop: 10, fontSize: 12 }}>Try Again</button>
+                </div>
+            }
+          </div>
+
+          {/* Vocab highlight guide */}
+          {highlight && (
+            <div style={styles.card}>
+              <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: textMuted, marginBottom: 10 }}>Highlighted Vocab</div>
+              {highlightWords.map(w => {
+                const word = VOCAB_DATA.find(v => v.word === w);
+                return word ? (
+                  <div key={w} style={{ marginBottom: 8, fontSize: 13 }}>
+                    <span style={{ color: accent, fontWeight: 700 }}>{w}</span> — {word.meaning}
+                  </div>
+                ) : null;
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
